@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skillgram | Share and Showcase Your Skills</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="/index.css">
+    <link rel="stylesheet" href="/effects.css">
+<!-- Settings button in header -->
+<button class="btn btn-icon" id="btn-settings" title="UI Settings"><i class="fa-solid fa-gear"></i></button>
+<!-- Settings modal (hidden) -->
+<div id="settings-modal" class="modal-overlay">
+  <div class="glass-card modal-content">
+    <div class="modal-header">
+      <h3>UI Effects Settings</h3>
+      <button class="btn-close-modal" id="btn-close-settings"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <label><input type="checkbox" id="toggle-particles" checked> Particle Background</label>
+      <label><input type="checkbox" id="toggle-sound" checked> Click Sound</label>
+      <label><input type="checkbox" id="toggle-glitch" checked> Glitch Hover</label>
+      <label><input type="checkbox" id="toggle-confetti" checked> Confetti on New Post</label>
+      <label><input type="checkbox" id="toggle-neon" > Neon Theme</label>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" id="save-settings">Save</button>
+    </div>
+  </div>
+</div>
+<!-- Local library copies -->
+<script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.1/tsparticles.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+<script src="/effects.js"></script>
+
+</head>
+<body>
+<div id="tsparticles" class="particles-container"></div>
+    <!-- Background Glow Blobs -->
+    <div class="glow-blob glow-1"></div>
+    <div class="glow-blob glow-2"></div>
+    <div class="glow-blob glow-3"></div>
+
+    <!-- MAIN APP CONTAINER -->
+    <div id="app">
+        <!-- ================= AUTH VIEW ================= -->
+        <div id="auth-view" class="view active">
+            <div class="auth-container">
+                <div class="auth-brand">
+                    <h1>Skillgram</h1>
+                    <h2 class="text-gradient">Skillgram</h2>
+                    <p>The developer-first skill showcase platform</p>
+                </div>
+
+                <!-- Login Card -->
+                <div id="login-card" class="auth-card">
+                    <h2>Welcome Back</h2>
+                    <p class="subtitle">Enter your credentials to enter the network</p>
+                    <form id="login-form">
+                        <div class="form-group">
+                            <label for="login-username"><i class="fa-regular fa-user"></i> Username</label>
+                            <input type="text" id="login-username" placeholder="e.g. hackerman" required autocomplete="username">
+                        </div>
+                        <div class="form-group">
+                            <label for="login-password"><i class="fa-solid fa-lock"></i> Password</label>
+                            <input type="password" id="login-password" placeholder="••••••••" required autocomplete="current-password">
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">
+                            <span>Sign In</span> <i class="fa-solid fa-arrow-right-to-bracket"></i>
+                        </button>
+                    </form>
+                    <p class="auth-switch">New to Skillgram? <a href="#" id="show-signup">Create an account</a></p>
+                </div>
+
+                <!-- Signup Card -->
+                <div id="signup-card" class="auth-card hidden">
+                    <h2>Join the Guild</h2>
+                    <p class="subtitle">Start sharing your skills and connect with builders</p>
+                    <form id="signup-form">
+                        <div class="form-group">
+                            <label for="signup-username"><i class="fa-regular fa-user"></i> Username</label>
+                            <input type="text" id="signup-username" placeholder="e.g. hackerman" required autocomplete="username">
+                        </div>
+                        <div class="form-group">
+                            <label for="signup-email"><i class="fa-regular fa-envelope"></i> Email Address</label>
+                            <input type="email" id="signup-email" placeholder="e.g. mail@domain.com" required autocomplete="email">
+                        </div>
+                        <div class="form-group">
+                            <label for="signup-password"><i class="fa-solid fa-lock"></i> Password</label>
+                            <input type="password" id="signup-password" placeholder="••••••••" required autocomplete="new-password">
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">
+                            <span>Get Started</span> <i class="fa-solid fa-user-plus"></i>
+                        </button>
+                    </form>
+                    <p class="auth-switch">Already have an account? <a href="#" id="show-login">Sign in</a></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= MAIN FEED VIEW ================= -->
+        <div id="feed-view" class="view">
+            <!-- Navigation Header -->
+            <header class="app-header">
+                <div class="header-container">
+                    <div class="header-logo">
+
+                        <span>Skillgram</span>
+                    </div>
+                    <div class="header-search">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="feed-search" placeholder="Search skills, posts, topics...">
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn btn-glow" id="btn-new-post">
+                            <i class="fa-solid fa-plus"></i> <span>New Post</span>
+                        </button>
+                        <button class="btn btn-icon" id="btn-toggle-theme" title="Toggle Theme">
+                         <i class="fa-solid fa-moon"></i>
+                     </button>
+                     <button class="btn btn-icon" id="btn-logout" title="Log Out">
+                         <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                     </button>
+                    </div>
+                </div>
+            </header>
+
+            <main class="feed-layout">
+                <div class="layout-container">
+                    <!-- LEFT COLUMN: Profile Sidebar -->
+                    <aside class="sidebar-left">
+                        <div class="glass-card profile-card">
+                            <div class="profile-banner"></div>
+                            <div class="profile-avatar-container">
+                                <img id="user-avatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=SkillgramUser" alt="Avatar">
+                                <button class="btn-avatar-edit" id="btn-change-avatar" title="Change Avatar">
+                                    <i class="fa-solid fa-camera"></i>
+                                </button>
+                            </div>
+                            <div class="profile-info">
+                                <h3 id="user-display-name">Username</h3>
+                                <p id="user-handle">@username</p>
+                                <p id="user-bio" class="profile-bio-text">No bio yet. Tell the community about your skillset!</p>
+                            </div>
+                            <div class="profile-skills">
+                                <h4>My Stack</h4>
+                                <div id="user-skills-list" class="tag-container">
+                                    <span class="empty-placeholder">No skills added yet</span>
+                                </div>
+                            </div>
+                            <button class="btn btn-secondary btn-block" id="btn-edit-profile">
+                                <i class="fa-solid fa-pen"></i> <span>Customize Profile</span>
+                            </button>
+                        </div>
+
+                        <!-- Info Card / Stats -->
+                        <div class="glass-card stats-card">
+                            <h4>Overview</h4>
+                            <div class="stat-grid">
+                                <div class="stat-item">
+                                    <span class="stat-num" id="stat-posts-count">0</span>
+                                    <span class="stat-label">Posts</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-num" id="stat-total-claps">0</span>
+                                    <span class="stat-label">Claps Recieved</span>
+                                </div>
+                            </div>
+                        </div>
+                    </aside>
+
+                    <!-- CENTER COLUMN: Posts Feed -->
+                    <section class="feed-content">
+                        <!-- Quick Post box -->
+                        <div class="glass-card quick-post-box">
+                            <div class="quick-post-avatar">
+                                <img class="avatar-sm" src="https://api.dicebear.com/7.x/bottts/svg?seed=SkillgramUser" alt="Avatar">
+                            </div>
+                            <div class="quick-post-input-container">
+                                <input type="text" id="quick-post-trigger" placeholder="Share a new skill, demo, or update...">
+                            </div>
+                        </div>
+
+                        <!-- Feed Header / Active Filter Info -->
+                        <div class="feed-filter-info hidden" id="feed-filter-bar">
+                            <span>Filtering by tag: <strong id="active-tag-label">#JavaScript</strong></span>
+                            <button class="btn-clear-filter" id="btn-clear-filter"><i class="fa-solid fa-xmark"></i> Clear</button>
+                        </div>
+
+                        <!-- Posts List -->
+                        <div id="posts-feed-container" class="posts-list">
+                            <!-- Skeleton Loader -->
+                            <div class="post-skeleton">
+                                <div class="sk-header">
+                                    <div class="sk-avatar"></div>
+                                    <div class="sk-meta">
+                                        <div class="sk-line"></div>
+                                        <div class="sk-line short"></div>
+                                    </div>
+                                </div>
+                                <div class="sk-body">
+                                    <div class="sk-line"></div>
+                                    <div class="sk-line"></div>
+                                    <div class="sk-line short"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- RIGHT COLUMN: Trending Skills -->
+                    <aside class="sidebar-right">
+                        <div class="glass-card trending-card">
+                            <h3>Trending Skills</h3>
+                            <ul class="trending-list" id="trending-skills-list">
+                                <li data-skill="React"><span class="trend-rank">#1</span> <span class="trend-name">React</span> <span class="trend-count">12 posts</span></li>
+                                <li data-skill="Spring Boot"><span class="trend-rank">#2</span> <span class="trend-name">Spring Boot</span> <span class="trend-count">8 posts</span></li>
+                                <li data-skill="TypeScript"><span class="trend-rank">#3</span> <span class="trend-name">TypeScript</span> <span class="trend-count">6 posts</span></li>
+                                <li data-skill="Docker"><span class="trend-rank">#4</span> <span class="trend-name">Docker</span> <span class="trend-count">4 posts</span></li>
+                                <li data-skill="CSS Grid"><span class="trend-rank">#5</span> <span class="trend-name">CSS Grid</span> <span class="trend-count">3 posts</span></li>
+                            </ul>
+                        </div>
+
+                        <div class="footer-note">
+                            <p>© 2026 Skillgram. Powered by Spring Boot 4.0 & Antigravity.</p>
+                        </div>
+                    </aside>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- ================= EDIT PROFILE MODAL ================= -->
+    <div id="edit-profile-modal" class="modal-overlay">
+        <div class="glass-card modal-content">
+            <div class="modal-header">
+                <h3>Customize Profile</h3>
+                <button class="btn-close-modal" id="btn-close-profile-modal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="edit-profile-form">
+                <div class="form-group">
+                    <label for="profile-email">Email Address</label>
+                    <input type="email" id="profile-email" placeholder="mail@domain.com">
+                </div>
+                <div class="form-group">
+                    <label for="profile-bio">Short Bio</label>
+                    <textarea id="profile-bio-input" rows="3" placeholder="Tell us about yourself, what you are building..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Skill Tags (comma separated)</label>
+                    <input type="text" id="profile-skills-input" placeholder="e.g. Java, Spring Boot, MySQL, CSS">
+                    <small class="form-help">Enter comma-separated values. They'll display as neon tags.</small>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="btn-cancel-profile">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= CREATE POST MODAL ================= -->
+    <div id="create-post-modal" class="modal-overlay">
+        <div class="glass-card modal-content">
+            <div class="modal-header">
+                <h3>Share Your Skill Update</h3>
+                <button class="btn-close-modal" id="btn-close-post-modal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="create-post-form">
+                <div class="form-group">
+                    <label for="post-title">Topic / Title</label>
+                    <input type="text" id="post-title" placeholder="e.g. Built a custom CSS particle system" required>
+                </div>
+                <div class="form-group">
+                    <label for="post-desc">Content / Explanation</label>
+                    <textarea id="post-desc" rows="5" placeholder="Share code snippets, tips, or what you learned..." required></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="btn-cancel-post">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Publish Post</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= AVATAR PRESET SELECTOR MODAL ================= -->
+    <div id="avatar-modal" class="modal-overlay">
+        <div class="glass-card modal-content">
+            <div class="modal-header">
+                <h3>Select Avatar Vibe</h3>
+                <button class="btn-close-modal" id="btn-close-avatar-modal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="avatar-presets-grid" id="avatar-presets-grid">
+                <!-- Will be dynamically filled by JS with Dicebear SVG presets -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Client-side Logic -->
+    <script src="/app.js" defer></script>
+    <script src="/ui.js" defer></script>
+    <button id="btn-scroll-top" class="btn btn-icon btn-scroll-top" title="Scroll to top"><i class="fa-solid fa-arrow-up"></i></button>
+</body>
+</html>

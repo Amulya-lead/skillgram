@@ -1,0 +1,12 @@
+/* effects.css – placeholder for UI effects */
+
+/* Example: smooth fade-in for modal */
+.modal-content {
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.modal-content.active {
+    opacity: 1;
+    transform: translateY(0);
+}
