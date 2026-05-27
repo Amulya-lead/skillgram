@@ -4,41 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Skillgram | Share and Showcase Your Skills</title>
+    <meta name="description" content="Skillgram — the developer-first skill showcase platform. Share code, earn claps, and grow your technical profile.">
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- FontAwesome for Premium Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Custom Style -->
+    <!-- Prism.js Syntax Highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+    <!-- Custom Styles -->
     <link rel="stylesheet" href="/index.css">
     <link rel="stylesheet" href="/effects.css">
-<!-- Settings button in header -->
-<button class="btn btn-icon" id="btn-settings" title="UI Settings"><i class="fa-solid fa-gear"></i></button>
-<!-- Settings modal (hidden) -->
-<div id="settings-modal" class="modal-overlay">
-  <div class="glass-card modal-content">
-    <div class="modal-header">
-      <h3>UI Effects Settings</h3>
-      <button class="btn-close-modal" id="btn-close-settings"><i class="fa-solid fa-xmark"></i></button>
-    </div>
-    <div class="modal-body">
-      <label><input type="checkbox" id="toggle-particles" checked> Particle Background</label>
-      <label><input type="checkbox" id="toggle-sound" checked> Click Sound</label>
-      <label><input type="checkbox" id="toggle-glitch" checked> Glitch Hover</label>
-      <label><input type="checkbox" id="toggle-confetti" checked> Confetti on New Post</label>
-      <label><input type="checkbox" id="toggle-neon" > Neon Theme</label>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-primary" id="save-settings">Save</button>
-    </div>
-  </div>
-</div>
-<!-- Local library copies -->
-<script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.1/tsparticles.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
-<script src="/effects.js"></script>
-
 </head>
 <body>
 <div id="tsparticles" class="particles-container"></div>
@@ -46,6 +23,38 @@
     <div class="glow-blob glow-1"></div>
     <div class="glow-blob glow-2"></div>
     <div class="glow-blob glow-3"></div>
+
+    <!-- Clap Particle Canvas (overlays entire page) -->
+    <canvas id="clap-canvas" style="position:fixed;top:0;left:0;pointer-events:none;z-index:9999;"></canvas>
+
+    <!-- Real-Time Feed Toast Banner -->
+    <div id="realtime-banner" class="realtime-banner hidden">
+        <i class="fa-solid fa-bolt"></i>
+        <span id="realtime-banner-text">New post just arrived!</span>
+        <button id="realtime-banner-refresh"><i class="fa-solid fa-rotate"></i> Refresh Feed</button>
+    </div>
+
+    <!-- Settings button in header -->
+    <button class="btn btn-icon" id="btn-settings" title="UI Settings"><i class="fa-solid fa-gear"></i></button>
+    <!-- Settings modal (hidden) -->
+    <div id="settings-modal" class="modal-overlay">
+      <div class="glass-card modal-content">
+        <div class="modal-header">
+          <h3>UI Effects Settings</h3>
+          <button class="btn-close-modal" id="btn-close-settings"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+          <label><input type="checkbox" id="toggle-particles" checked> Particle Background</label>
+          <label><input type="checkbox" id="toggle-sound" checked> Click Sound</label>
+          <label><input type="checkbox" id="toggle-glitch" checked> Glitch Hover</label>
+          <label><input type="checkbox" id="toggle-confetti" checked> Confetti on New Post</label>
+          <label><input type="checkbox" id="toggle-neon" > Neon Theme</label>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-primary" id="save-settings">Save</button>
+        </div>
+      </div>
+    </div>
 
     <!-- MAIN APP CONTAINER -->
     <div id="app">
@@ -110,7 +119,6 @@
             <header class="app-header">
                 <div class="header-container">
                     <div class="header-logo">
-
                         <span>Skillgram</span>
                     </div>
                     <div class="header-search">
@@ -159,6 +167,15 @@
                             </button>
                         </div>
 
+                        <!-- Skill Radar Chart Card -->
+                        <div class="glass-card radar-card" id="radar-card">
+                            <h4><i class="fa-solid fa-chart-radar" style="color:var(--accent-purple)"></i> Skill Radar</h4>
+                            <p class="radar-hint" id="radar-hint">Add skills to your profile to see your radar chart</p>
+                            <div class="radar-chart-wrapper" id="radar-chart-wrapper" style="display:none">
+                                <canvas id="skill-radar-chart"></canvas>
+                            </div>
+                        </div>
+
                         <!-- Info Card / Stats -->
                         <div class="glass-card stats-card">
                             <h4>Overview</h4>
@@ -169,7 +186,7 @@
                                 </div>
                                 <div class="stat-item">
                                     <span class="stat-num" id="stat-total-claps">0</span>
-                                    <span class="stat-label">Claps Recieved</span>
+                                    <span class="stat-label">Claps Received</span>
                                 </div>
                             </div>
                         </div>
@@ -226,8 +243,17 @@
                             </ul>
                         </div>
 
+                        <!-- Live Feed Indicator -->
+                        <div class="glass-card live-status-card">
+                            <div class="live-dot-wrapper">
+                                <span class="live-dot" id="live-dot"></span>
+                                <span id="live-status-text">Connecting...</span>
+                            </div>
+                            <p class="live-sub">Real-time feed active</p>
+                        </div>
+
                         <div class="footer-note">
-                            <p>© 2026 Skillgram. Powered by Spring Boot 4.0 & Antigravity.</p>
+                            <p>© 2026 Skillgram. Powered by Spring Boot 4.0 &amp; Antigravity.</p>
                         </div>
                     </aside>
                 </div>
@@ -266,9 +292,9 @@
 
     <!-- ================= CREATE POST MODAL ================= -->
     <div id="create-post-modal" class="modal-overlay">
-        <div class="glass-card modal-content">
+        <div class="glass-card modal-content modal-wide">
             <div class="modal-header">
-                <h3>Share Your Skill Update</h3>
+                <h3><i class="fa-solid fa-code" style="color:var(--accent-cyan)"></i> Share Your Skill Update</h3>
                 <button class="btn-close-modal" id="btn-close-post-modal"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <form id="create-post-form">
@@ -278,11 +304,36 @@
                 </div>
                 <div class="form-group">
                     <label for="post-desc">Content / Explanation</label>
-                    <textarea id="post-desc" rows="5" placeholder="Share code snippets, tips, or what you learned..." required></textarea>
+                    <textarea id="post-desc" rows="4" placeholder="Share what you learned, tips, or your experience..." required></textarea>
                 </div>
+
+                <!-- Code Snippet Section -->
+                <div class="form-group code-snippet-group">
+                    <label><i class="fa-solid fa-terminal" style="color:var(--accent-cyan)"></i> Code Snippet <span class="optional-badge">Optional</span></label>
+                    <div class="code-lang-bar">
+                        <select id="post-code-lang" class="lang-select">
+                            <option value="">-- Select Language --</option>
+                            <option value="javascript">JavaScript</option>
+                            <option value="java">Java</option>
+                            <option value="python">Python</option>
+                            <option value="typescript">TypeScript</option>
+                            <option value="css">CSS</option>
+                            <option value="html">HTML</option>
+                            <option value="sql">SQL</option>
+                            <option value="bash">Bash</option>
+                            <option value="json">JSON</option>
+                            <option value="go">Go</option>
+                            <option value="rust">Rust</option>
+                            <option value="cpp">C++</option>
+                        </select>
+                        <button type="button" id="btn-clear-code" class="btn-clear-code" title="Clear code"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                    <textarea id="post-code" rows="7" class="code-textarea" placeholder="// Paste your code here...&#10;function greet(name) {&#10;  return `Hello, ${name}!`;&#10;}"></textarea>
+                </div>
+
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" id="btn-cancel-post">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Publish Post</button>
+                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane"></i> Publish Post</button>
                 </div>
             </form>
         </div>
@@ -303,10 +354,28 @@
 
     <!-- Toast Notifications -->
     <div id="toast-container" class="toast-container"></div>
+    <button id="btn-scroll-top" class="btn btn-icon btn-scroll-top" title="Scroll to top"><i class="fa-solid fa-arrow-up"></i></button>
 
-    <!-- Client-side Logic -->
+    <!-- Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.1/tsparticles.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-typescript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-go.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-rust.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-cpp.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+
+    <!-- App Scripts -->
+    <script src="/effects.js" defer></script>
+    <script src="/features.js" defer></script>
     <script src="/app.js" defer></script>
     <script src="/ui.js" defer></script>
-    <button id="btn-scroll-top" class="btn btn-icon btn-scroll-top" title="Scroll to top"><i class="fa-solid fa-arrow-up"></i></button>
 </body>
 </html>

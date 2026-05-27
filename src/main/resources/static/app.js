@@ -80,6 +80,8 @@ const el = {
     createPostForm: document.getElementById('create-post-form'),
     postTitle: document.getElementById('post-title'),
     postDesc: document.getElementById('post-desc'),
+    postCode: document.getElementById('post-code'),
+    postCodeLang: document.getElementById('post-code-lang'),
     btnClosePostModal: document.getElementById('btn-close-post-modal'),
     btnCancelPost: document.getElementById('btn-cancel-post'),
     
@@ -229,11 +231,12 @@ function updateProfileUI() {
     
     // Load skills
     el.userSkillsList.innerHTML = '';
+    let parsedSkills = [];
     if (state.user.skillSet) {
         try {
-            const skills = state.user.skillSet.split(',').map(s => s.trim()).filter(Boolean);
-            if (skills.length > 0) {
-                skills.forEach(skill => {
+            parsedSkills = state.user.skillSet.split(',').map(s => s.trim()).filter(Boolean);
+            if (parsedSkills.length > 0) {
+                parsedSkills.forEach(skill => {
                     const tag = document.createElement('span');
                     tag.className = 'skill-tag';
                     tag.textContent = `#${skill}`;
@@ -248,6 +251,11 @@ function updateProfileUI() {
         }
     } else {
         el.userSkillsList.innerHTML = '<span class="empty-placeholder">No skills added yet</span>';
+    }
+
+    // Render Skill Radar Chart
+    if (window.RadarChart) {
+        window.RadarChart.render(parsedSkills);
     }
     
     // Set Avatar Vibe
@@ -332,25 +340,44 @@ function renderFeed() {
         const descHtml = highlightHashtags(post.description || '');
         const postClaps = state.claps[post.id] || 0;
         const hasClapped = postClaps > 0;
+        const avatarSeed = post.title ? (post.title.length + 3) : 'Post';
+
+        // Build code snippet block if present
+        let codeBlock = '';
+        if (post.codeSnippet && post.codeSnippet.trim()) {
+            const lang = post.language || 'javascript';
+            const escapedCode = escapeHtml(post.codeSnippet);
+            codeBlock = `
+                <div class="code-snippet-card">
+                    <div class="code-snippet-header">
+                        <span class="lang-badge lang-${lang}">${lang.toUpperCase()}</span>
+                        <button class="copy-btn"><i class="fa-regular fa-copy"></i> Copy</button>
+                    </div>
+                    <pre class="language-${lang} code-pre"><code class="language-${lang}">${escapedCode}</code></pre>
+                </div>
+            `;
+        }
         
         const card = document.createElement('article');
         card.className = 'glass-card post-card';
+        card.setAttribute('data-post-id', post.id);
         card.innerHTML = `
             <div class="post-header">
                 <div class="post-author-meta">
-                    <img class="avatar-sm" src="https://api.dicebear.com/7.x/bottts/svg?seed=${post.title ? post.title.length + 3 : 'Post'}" alt="Avatar">
+                    <img class="avatar-sm" src="https://api.dicebear.com/7.x/bottts/svg?seed=${avatarSeed}" alt="Avatar">
                     <div class="post-author-info">
                         <h4>Community Builder</h4>
                         <span class="post-time">Post #${post.id}</span>
                     </div>
                 </div>
-                <span class="post-badge">Skill Share</span>
+                <span class="post-badge">${post.codeSnippet ? '<i class="fa-solid fa-code"></i> Code Post' : 'Skill Share'}</span>
             </div>
             <h3 class="post-title">${escapeHtml(post.title || '')}</h3>
             <p class="post-description">${descHtml}</p>
+            ${codeBlock}
             <div class="post-footer">
                 <div class="post-actions">
-                    <button class="btn-action ${hasClapped ? 'clap-active' : ''}" data-post-id="${post.id}">
+                    <button class="btn-action clap-btn ${hasClapped ? 'clap-active' : ''}" data-post-id="${post.id}">
                         <i class="fa-solid fa-hands-clapping"></i>
                         <span>Clap (<strong class="clap-count">${postClaps}</strong>)</span>
                     </button>
@@ -358,10 +385,23 @@ function renderFeed() {
             </div>
         `;
         
-        // Add clap event listener
-        const clapBtn = card.querySelector('.btn-action');
+        // Prism highlight code blocks
+        if (post.codeSnippet) {
+            card.querySelectorAll('pre code').forEach(block => {
+                if (window.Prism) Prism.highlightElement(block);
+            });
+            const preEl = card.querySelector('pre');
+            if (preEl && window.attachCopyBtn) window.attachCopyBtn(preEl);
+        }
+        
+        // Add clap event listener with particle burst
+        const clapBtn = card.querySelector('.clap-btn');
         clapBtn.addEventListener('click', (e) => {
             e.stopPropagation();
+            const rect = clapBtn.getBoundingClientRect();
+            const cx = rect.left + rect.width / 2;
+            const cy = rect.top + rect.height / 2;
+            if (window.ClapBurst) window.ClapBurst.burst(cx, cy);
             handleClap(post.id, clapBtn);
         });
         
@@ -519,13 +559,23 @@ function setupListeners() {
     // Create Post submit
     el.createPostForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+        const codeVal = el.postCode ? el.postCode.value.trim() : '';
+        const langVal = el.postCodeLang ? el.postCodeLang.value : '';
+        const postPayload = {
+            title: el.postTitle.value,
+            description: el.postDesc.value,
+        };
+        if (codeVal) {
+            postPayload.codeSnippet = codeVal;
+            postPayload.language = langVal || 'javascript';
+        }
         try {
-            await request('/posts', 'POST', {
-                title: el.postTitle.value,
-                description: el.postDesc.value
-            });
+            await request('/posts', 'POST', postPayload);
             closeModal(el.createPostModal);
-            showToast('New update posted to the feed!', 'success');
+            // Clear code fields
+            if (el.postCode) el.postCode.value = '';
+            if (el.postCodeLang) el.postCodeLang.value = '';
+            showToast('New update posted to the feed! 🎉', 'success');
             await fetchPosts();
         } catch (err) {
             showToast('Failed to publish post.', 'error');
@@ -580,8 +630,24 @@ function setupListeners() {
     });
 }
 
+// Expose feed refresh for real-time banner
+window._skillgramRefreshFeed = () => fetchPosts();
+
 // Start
 document.addEventListener('DOMContentLoaded', () => {
     setupListeners();
-    initApp();
+    initApp().then(() => {
+        // Connect WebSocket after login
+        if (state.token && window.RealtimeFeed) {
+            window.RealtimeFeed.connect((newPost) => {
+                // Prepend new post to state without full reload
+                const already = state.posts.find(p => p.id === newPost.id);
+                if (!already) {
+                    state.posts.unshift(newPost);
+                    renderFeed();
+                    updateStats();
+                }
+            });
+        }
+    });
 });

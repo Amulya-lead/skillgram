@@ -36,7 +36,10 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers("/", "/index.html", "/index.css", "/animations.css", "/app.js", "/effects.css", "/effects.js", "/ui.js", "/static/**", "/lib/**", "/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
+                        .requestMatchers("/ws/**", "/ws/info", "/ws/info/**").permitAll()
+                        .requestMatchers("/", "/index.html", "/index.css", "/animations.css",
+                                "/app.js", "/effects.css", "/effects.js", "/ui.js", "/features.js",
+                                "/static/**", "/lib/**", "/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
